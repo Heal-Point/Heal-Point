@@ -101,13 +101,6 @@ class DoctorAuthController extends Controller
         // Create the doctor
         $doctor = Doctor::create($validated);
 
-        // Create subscription
-        Subscription::create([
-            'doctor_id' => $doctor->id,
-            'start_date' => now(),
-            'end_date' => now()->addYear(),
-            'status' => 'active',
-        ]);
 
         // Login the doctor
         Auth::login($doctor);
@@ -181,7 +174,7 @@ class DoctorAuthController extends Controller
 
 
 
-    
+
 
 
 
