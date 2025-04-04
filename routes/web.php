@@ -11,6 +11,7 @@ use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\DoctorsPageController;
+use App\Models\Subscription;
 use Illuminate\Support\Facades\Route;
 
 
@@ -27,16 +28,15 @@ Route::get('/about', function () {
     return view('public.about');
 })->name('about');
 
-Route::get('/doctor', function () {
-    return view('public.doctor');
-})->name('doctors');
+// Route::get('/doctor', function () {
+//     return view('public.doctor');
+// })->name('doctor');
 
 
+Route::get('/doctors', [DoctorsPageController::class, 'index'])->name('doctors');
 
-Route::prefix('public')->group(function () {
-    Route::get('/doctors', [DoctorsPageController::class, 'index'])->name('doctorsPage.index');
-    Route::get('/doctors/{id}', [DoctorsPageController::class, 'show'])->name('doctorsPage.show');
-});
+Route::get('/doctors/{id}', [DoctorsPageController::class, 'show'])->name('doctor');
+
 
 
 
@@ -58,30 +58,40 @@ Route::prefix('admin')->middleware('admin')->group(function () {
     Route::resource('admins', AdminController::class);
     Route::resource('specializations', SpecializationController::class);
     Route::resource('users', UserController::class);
+
+    // Doctor routes with additional custom routes
     Route::resource('doctors', DoctorController::class);
+    Route::patch('/doctors/{doctor}/status', [DoctorController::class, 'updateStatus'])
+        ->name('doctors.update-status');
+
     Route::get('/chart', [AdminController::class, 'chart'])->name('admin.chart');
     Route::resource('appointments', AppointmentController::class);
     Route::resource('patients', PatientController::class);
     Route::resource('subscriptions', SubscriptionController::class);
 });
-
 /**
  * Doctor Routes
  */
-// Guest (unauthenticated) doctor routes
-Route::middleware('guest:doctor')->group(function () {
-    Route::get('/register-doctor', [DoctorAuthController::class, 'create'])->name('register.doctor');
-    Route::post('/register-doctor', [DoctorAuthController::class, 'store'])->name('register.doctor.store');
-    Route::get('/doctor/login', [DoctorAuthController::class, 'showLogin'])->name('doctor.login');
-    Route::post('/doctor/login', [DoctorAuthController::class, 'login'])->name('doctor.login.submit');
-});
 
 // Authenticated doctor routes
 Route::prefix('doctor')->middleware('doctor')->group(function () {
     Route::get('/dashboard', [DoctorAuthController::class, 'show'])->name('doctor.dashboard');
-    // Route::post('/appointments', [AppointmentController::class , 'store'])->name('doctor.appointments.store');
     Route::put('/appointments/{appointmentId}/update', [AppointmentController::class , 'update'])->name('doctor.appointments.update');
     Route::get('/logout', [DoctorAuthController::class, 'logout'])->name('doctor.logout');
+});
+Route::post('/subscription/process', [SubscriptionController::class, 'processSubscription'])->name('doctor.subscription.process');
+
+
+
+
+
+
+// Guest (unauthenticated) doctor routes
+Route::middleware('guest:doctor')->group(function () {
+    Route::get('/doctor/register', [DoctorAuthController::class, 'create'])->name('register.doctor');
+    Route::post('/doctor/register', [DoctorAuthController::class, 'store'])->name('register.doctor.store');
+    Route::get('/doctor/login', [DoctorAuthController::class, 'showLogin'])->name('doctor.login');
+    Route::post('/doctor/login', [DoctorAuthController::class, 'login'])->name('doctor.login.submit');
 });
 
 /**
@@ -92,6 +102,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::post('/appointments', [AppointmentController::class, 'store'])->name('appointments.store');
 });
 
 // Authentication routes

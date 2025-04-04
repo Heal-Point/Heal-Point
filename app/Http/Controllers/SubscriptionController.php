@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Appointment;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use App\Models\Doctor;
 use App\Models\Subscription;
-use App\Http\Requests\StoreSubscriptionRequest;
-use App\Http\Requests\UpdateSubscriptionRequest;
+
+
 
 
 class SubscriptionController extends Controller
@@ -14,55 +18,40 @@ class SubscriptionController extends Controller
      */
     public function index()
     {
-        $subscriptions = Subscription::all(); 
+        $subscriptions = Subscription::all();
         return view('admin.subscriptions', compact('subscriptions'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function processSubscription(Request $request)
     {
-        //
-    }
+        $validated = $request->validate([
+            'doctor_id' => 'required|exists:doctors,id',
+            'duration_months' => 'integer|in:1,3,6,12,24',
+        ]);
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreSubscriptionRequest $request)
-    {
-        //
-    }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Subscription $subscription)
-    {
-        //
-    }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Subscription $subscription)
-    {
-        //
-    }
+        try {
+            // Calculate dates
+            $startDate = now();
+            $endDate = $startDate->copy()->addMonths(intval($validated['duration_months']));
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateSubscriptionRequest $request, Subscription $subscription)
-    {
-        //
-    }
+            
+            // Create subscription record
+            $subscription = Subscription::create([
+                'doctor_id' => $validated['doctor_id'],
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'status' => 'active'
+            ]);
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Subscription $subscription)
-    {
-        //
+
+
+            return redirect()->route('doctor.dashboard')
+                ->with('success', 'Subscription activated successfully!');
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Payment failed: '.$e->getMessage());
+        }
     }
 }

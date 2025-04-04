@@ -6,6 +6,7 @@ use App\Models\Appointment;
 use App\Http\Requests\StoreAppointmentRequest;
 use App\Http\Requests\UpdateAppointmentRequest;
 use App\Models\Doctor;
+use App\Models\DoctorUnavailability;
 use App\Models\Patient;
 use Illuminate\Http\Request;
 
@@ -37,12 +38,28 @@ class AppointmentController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreAppointmentRequest $request)
+    public function store(Request $request)
     {
-        $validated = $request->validated();
-        Appointment::create($validated);
+        $request->validate([
+            'doctor_id' => 'required|exists:doctors,id',
+            'patient_id' => 'required|exists:patients,id',
+            'appointment_date' => 'required|date',
+            'appointment_time' => 'required',
+        ]);
 
-        return redirect()->route('admin.appointments.index')->with('success', 'Appointment created successfully.');
+        // Convert time to proper format
+        $time = date('H:i:s', strtotime($request->appointment_time));
+
+        $appointment = Appointment::create([
+            'doctor_id' => $request->doctor_id,
+            'patient_id' => $request->patient_id,
+            'appointment_date' => $request->appointment_date,
+            'appointment_time' => $time,
+            'status' => 'pending',
+            'payment_status' => 'unpaid',
+        ]);
+
+        return redirect()->back()->with('success', 'Appointment booked successfully!');
     }
 
     /**
@@ -98,10 +115,39 @@ class AppointmentController extends Controller
         // return redirect()->route('admin.appointments.index')->with('success', 'Appointment deleted successfully.');
     }
 
-    public function update(Request $request, Appointment $appointmentId) {
+    public function update(Request $request, Appointment $appointmentId)
+    {
+        $previousStatus = $appointmentId->status;
+        $newStatus = $request->status;
 
-        // dd($request->status , $appointmentId->status);
-        $appointmentId->update(['status' => $request->status]);
-        return back()->with('success', 'Appointment canceled successfully.');
+
+        // Update the appointment status
+        $appointmentId->update(['status' => $newStatus]);
+
+
+        if ($newStatus === 'confirmed' && $previousStatus !== 'confirmed') {
+            // Add to unavailabilities only if it wasn't already confirmed
+            DoctorUnavailability::create([
+                'doctor_id' => $appointmentId->doctor_id,
+                'date' => $appointmentId->appointment_date,
+                'start_time' => $appointmentId->appointment_time,
+            ]);
+        }
+        elseif ($newStatus === 'canceled' && $previousStatus === 'confirmed') {
+            // Only remove from unavailabilities if it was previously confirmed
+            DoctorUnavailability::where([
+                'doctor_id' => $appointmentId->doctor_id,
+                'date' => $appointmentId->appointment_date,
+                'start_time' => $appointmentId->appointment_time,
+            ])->delete();
+        }
+
+        $message = match($newStatus) {
+            'confirmed' => 'Appointment confirmed successfully.',
+            'canceled' => 'Appointment canceled successfully.',
+            default => 'Appointment status updated successfully.'
+        };
+
+        return back()->with('success', $message);
     }
 }

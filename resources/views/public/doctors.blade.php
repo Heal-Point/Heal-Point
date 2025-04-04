@@ -7,7 +7,7 @@
                 <div class="row justify-content-center">
                     <div class="col-lg-8">
                         <div class="search-card p-4">
-                            <form class="appointment-form" action="{{ route('doctorsPage.index') }}" method="GET">
+                            <form class="appointment-form" action="{{ route('doctors') }}" method="GET">
                                 <div class="row g-2">
                                     <div class="col-md-5">
                                         <input type="text" name="search" class="form-control" placeholder="Search by doctor name or specialty" value="{{ request('search') }}">
@@ -46,7 +46,7 @@
                         <div class="divider mb-4"></div>
 
                         <!-- Specialty Filter -->
-                        <form action="{{ route('doctorsPage.index') }}" method="GET" id="filter-form">
+                        <form action="{{ route('doctors') }}" method="GET" id="filter-form">
                             <input type="hidden" name="search" value="{{ request('search') }}">
                             <input type="hidden" name="governorate" value="{{ request('governorate') }}">
 
@@ -96,7 +96,7 @@
                                     <p class="text-muted mb-3">
                                         <i class="icofont-location-pin"></i> {{ $doctor->address }}, {{ $doctor->governorate }}
                                     </p>
-                                    <a href="{{ route('doctorsPage.show', $doctor->id) }}" class="btn btn-main btn-round-full btn-sm w-100">View Profile</a>
+                                    <a href="{{ route('doctor', $doctor->id) }}" class="btn btn-main btn-round-full btn-sm w-100">View Profile</a>
                                 </div>
                             </div>
                         </div>

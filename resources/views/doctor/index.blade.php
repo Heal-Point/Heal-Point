@@ -83,6 +83,21 @@
     .inline-form {
         display: inline-block;
     }
+    .day-badge {
+        display: inline-block;
+        background-color: #1a365d;
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        margin-right: 0.25rem;
+        margin-bottom: 0.25rem;
+    }
+    .working-hours {
+        font-size: 0.875rem;
+        color: #cbd5e0;
+        margin-top: 0.5rem;
+    }
 </style>
 @endsection
 
@@ -162,27 +177,47 @@
                     <div class="mb-4">
                         <h3 class="text-sm font-semibold text-blue-300 uppercase tracking-wider">Availability</h3>
                         <div class="mt-2">
-                            @isset($doctor->available_days)
-                                @foreach(json_decode($doctor->available_days) as $day)
-                                    <span class="inline-block bg-blue-800 rounded-full px-3 py-1 text-xs font-semibold text-white mr-2 mb-2">
-                                        {{ $day }}
-                                    </span>
-                                @endforeach
-                            @else
+                            @php
+                                $days = [
+                                    'monday' => 'Monday',
+                                    'tuesday' => 'Tuesday',
+                                    'wednesday' => 'Wednesday',
+                                    'thursday' => 'Thursday',
+                                    'friday' => 'Friday',
+                                    'saturday' => 'Saturday',
+                                    'sunday' => 'Sunday'
+                                ];
+                                $hasAvailability = false;
+                            @endphp
+
+                            @foreach($days as $key => $day)
+                                @if($doctor->$key)
+                                    <span class="day-badge">{{ $day }}</span>
+                                    @php $hasAvailability = true; @endphp
+                                @endif
+                            @endforeach
+
+                            @if(!$hasAvailability)
                                 <p class="text-sm text-blue-100">No availability set</p>
-                            @endisset
+                            @endif
                         </div>
+                        @if($doctor->working_hours_start && $doctor->working_hours_end)
+                            <div class="working-hours">
+                                Working Hours: {{ \Carbon\Carbon::parse($doctor->working_hours_start)->format('h:i A') }} -
+                                {{ \Carbon\Carbon::parse($doctor->working_hours_end)->format('h:i A') }}
+                            </div>
+                        @endif
                     </div>
 
-                    <div class="mt-6">
-                        {{-- <a href="{{ route('doctor.profile.edit') }}" class="btn-primary w-full py-2 px-4 rounded-md font-medium text-center block">
+                    {{-- <div class="mt-6">
+                        <a href="{{ route('doctor.profile.edit') }}" class="btn-primary w-full py-2 px-4 rounded-md font-medium text-center block">
                             Edit Profile
-                        </a> --}}
-                    </div>
+                        </a>
+                    </div> --}}
                 </div>
             </div>
 
-            <!-- Quick Stats -->
+            <!-- Quick2 Stats -->
             <div class="bg-white rounded-lg shadow-lg mt-6 p-6">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4">Quick Stats</h3>
                 <div class="grid grid-cols-2 gap-4">
@@ -265,10 +300,10 @@
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 @isset($appointment->appointment_date)
-                                                <div class="text-sm text-gray-900">{{ $appointment->appointment_date }}</div>
+                                                <div class="text-sm text-gray-900">{{ \Carbon\Carbon::parse($appointment->appointment_date)->format('M d, Y') }}</div>
                                                 @endisset
                                                 @isset($appointment->appointment_time)
-                                                <div class="text-sm text-gray-500">{{ $appointment->appointment_time }}</div>
+                                                <div class="text-sm text-gray-500">{{ \Carbon\Carbon::parse($appointment->appointment_time)->format('h:i A') }}</div>
                                                 @endisset
                                             </td>
 
@@ -384,10 +419,10 @@
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 @isset($appointment->appointment_date)
-                                                <div class="text-sm text-gray-900">{{ $appointment->appointment_date }}</div>
+                                                <div class="text-sm text-gray-900">{{ \Carbon\Carbon::parse($appointment->appointment_date)->format('M d, Y') }}</div>
                                                 @endisset
                                                 @isset($appointment->appointment_time)
-                                                <div class="text-sm text-gray-500">{{ $appointment->appointment_time }}</div>
+                                                <div class="text-sm text-gray-500">{{ \Carbon\Carbon::parse($appointment->appointment_time)->format('h:i A') }}</div>
                                                 @endisset
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">

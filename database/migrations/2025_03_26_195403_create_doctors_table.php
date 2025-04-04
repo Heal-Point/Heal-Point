@@ -28,8 +28,20 @@ return new class extends Migration
             ])->nullable()->default('Amman');
             $table->string('address')->nullable();
             $table->decimal('price_per_appointment', 10, 2)->nullable();
-            $table->json('available_days')->nullable();
-            $table->json('working_hours')->nullable();
+
+            // Individual day columns (boolean for each day)
+            $table->boolean('monday')->default(false);
+            $table->boolean('tuesday')->default(false);
+            $table->boolean('wednesday')->default(false);
+            $table->boolean('thursday')->default(false);
+            $table->boolean('friday')->default(false);
+            $table->boolean('saturday')->default(false);
+            $table->boolean('sunday')->default(false);
+
+            // Working hours as separate columns
+            $table->time('working_hours_start')->default('09:00:00');
+            $table->time('working_hours_end')->default('17:00:00');
+
             $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
             $table->timestamps();
             $table->softDeletes();

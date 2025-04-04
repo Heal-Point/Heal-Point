@@ -3,10 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Doctor;
-use App\Http\Requests\StoreDoctorRequest;
-use App\Http\Requests\UpdateDoctorRequest;
+
 use App\Models\Specialization;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class DoctorController extends Controller
 {
@@ -42,73 +43,77 @@ class DoctorController extends Controller
      */
     public function update(Request $request, Doctor $doctor)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:doctors,email,' . $doctor->id,
-            'password' => 'nullable|min:6',
-            'phone' => 'nullable|string|max:20',
-            'specialization_id' => 'required|exists:specializations,id',
-            'bio' => 'nullable|string',
-            'experience_years' => 'nullable|integer|min:0',
-            'clinic_address' => 'nullable|string',
-            'price_per_appointment' => 'nullable|numeric|min:0',
-            'available_days' => 'nullable|string',
-            'working_hours' => 'nullable|string',
-        ]);
 
-        $doctorData = $request->only([
-            'name', 'email', 'phone', 'specialization_id', 'bio', 'experience_years',
-            'clinic_address', 'price_per_appointment', 'available_days', 'working_hours'
-        ]);
+        // $validated = $request->validate([
+        //     'name' => 'required|string|max:255',
+        //     'email' => 'required|email|unique:doctors,email,'.$doctor->id,
+        //     'phone' => 'nullable|string|max:20',
+        //     'specialization_id' => 'required|exists:specializations,id',
+        //     'governorate' => 'nullable|string',
+        //     'address' => 'nullable|string',
+        //     'experience_years' => 'nullable|integer|min:0',
+        //     'price_per_appointment' => 'nullable|numeric|min:0',
+        //     'bio' => 'nullable|string',
+        //     'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        //     'doctor_document' => 'nullable|file|mimes:pdf|max:5120',
+        //     'status' => 'required|in:pending,approved,rejected',
+        //     'monday' => 'nullable|boolean',
+        //     'tuesday' => 'nullable|boolean',
+        //     'wednesday' => 'nullable|boolean',
+        //     'thursday' => 'nullable|boolean',
+        //     'friday' => 'nullable|boolean',
+        //     'saturday' => 'nullable|boolean',
+        //     'sunday' => 'nullable|boolean',
+        //     'working_hours_start' => 'nullable|date_format:H:i',
+        //     'working_hours_end' => 'nullable|date_format:H:i|after:working_hours_start',
+        // ]);
 
+
+        $data = $request->except(['image', 'doctor_document', 'password']);
+
+        // Handle password update
         if ($request->filled('password')) {
-            $doctorData['password'] = bcrypt($request->password);
+            $data['password'] = Hash::make($request->password);
         }
 
-        $doctor->update($doctorData);
+        // Handle image upload
+        if ($request->hasFile('image')) {
+            // Delete old image if exists
+            if ($doctor->image) {
+                Storage::disk('public')->delete($doctor->image);
+            }
+            $data['image'] = $request->file('image')->store('doctors/images', 'public');
+        }
 
-        return redirect()->route('doctors.index')->with('success', 'Doctor updated successfully.');
+        // Handle document upload
+        if ($request->hasFile('doctor_document')) {
+            // Delete old document if exists
+            if ($doctor->doctor_document) {
+                Storage::disk('public')->delete($doctor->doctor_document);
+            }
+            $data['doctor_document'] = $request->file('doctor_document')->store('doctors/documents', 'public');
+        }
+
+        // Update boolean fields for days
+        foreach (['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as $day) {
+            $data[$day] = $request->has($day);
+        }
+
+        $doctor->update($data);
+
+        return back()->with('success', 'Doctor updated successfully!');
     }
 
+    public function updateStatus(Request $request, Doctor $doctor)
+    {
+        $validated = $request->validate([
+            'status' => 'required|in:pending,approved,rejected'
+        ]);
 
-    // public function store(Request $request)
-    // {
-    //     // Validate the request data
-    //     $request->validate([
-    //         'name' => 'required|string|max:255',
-    //         'email' => 'required|email|unique:doctors',
-    //         'password' => 'required|min:6|confirmed',
-    //         'phone' => 'nullable|string|max:20',
-    //         'specialization_id' => 'required|exists:specializations,id',
-    //         'experience_years' => 'nullable|integer|min:0',
-    //         'price_per_appointment' => 'nullable|numeric|min:0',
-    //         'bio' => 'nullable|string', // Optional bio field
-    //         'clinic_address' => 'nullable|string', // Optional clinic address
-    //         'available_days' => 'nullable|string', // Optional available days
-    //         'working_hours' => 'nullable|string', // Optional working hours
-    //     ]);
+        $doctor->update(['status' => $validated['status']]);
 
-    //     // Create the doctor
-    //     Doctor::create([
-    //         'name' => $request->name,
-    //         'email' => $request->email,
-    //         'password' => bcrypt($request->password), // Hash the password
-    //         'phone' => $request->phone,
-    //         'specialization_id' => $request->specialization_id,
-    //         'experience_years' => $request->experience_years,
-    //         'price_per_appointment' => $request->price_per_appointment,
-    //         'bio' => $request->bio,
-    //         'clinic_address' => $request->clinic_address,
-    //         'available_days' => $request->available_days,
-    //         'working_hours' => $request->working_hours,
-    //         'created_by' => auth()->guard('admin')->id(), // Get admin's ID who creates the doctor
-    //     ]);
-
-    //     // Redirect with success message
-    //     return redirect()->route('doctors.index')->with('success', 'Doctor created successfully.');
-    // }
-
-
+        return back()->with('success', "Doctor status updated to {$validated['status']} successfully!");
+    }
 
     /**
      * Remove the specified doctor from storage.

@@ -12,11 +12,29 @@ class Doctor extends Authenticatable
     /** @use HasFactory<\Database\Factories\DoctorFactory> */
 
     use HasFactory , SoftDeletes;
-
     protected $fillable = [
-        'name', 'email', 'password', 'phone', 'specialization_id', 'bio', 'experience_years',
-        'price_per_appointment', 'available_days', 'working_hours', 
-        'image', 'doctor_document', 'governorate', 'address', 'status'
+        'name',
+        'email',
+        'password',
+        'image',
+        'doctor_document',
+        'phone',
+        'specialization_id',
+        'bio',
+        'experience_years',
+        'governorate',
+        'address',
+        'price_per_appointment',
+        'monday',
+        'tuesday',
+        'wednesday',
+        'thursday',
+        'friday',
+        'saturday',
+        'sunday',
+        'working_hours_start',
+        'working_hours_end',
+        'status'
     ];
 
     // A doctor belongs to a specialization
@@ -31,6 +49,12 @@ class Doctor extends Authenticatable
         return $this->hasMany(Appointment::class, 'doctor_id');
     }
 
+    public function unavailable() {
+        return $this->hasMany(DoctorUnavailability::class,'');
+    }
 
+    public function subscription() {
+        return $this->hasOne(Patient::class);
+    }
 
 }

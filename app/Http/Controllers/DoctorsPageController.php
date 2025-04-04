@@ -70,11 +70,13 @@ class DoctorsPageController extends Controller
     /**
      * Display the specified resource.
      */
+
     public function show(string $id)
     {
         $doctor = Doctor::with('specialization')->findOrFail($id);
+
         return view('public.doctor', compact('doctor'));
     }
 
-    // Other methods remain unchanged
+
 }

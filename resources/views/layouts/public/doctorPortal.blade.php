@@ -29,10 +29,12 @@
                         </a>
                         <div class="hidden md:block">
                             <span class="text-white font-medium">Doctor Portal</span>
+                            @auth('doctor')
                             <form method="GET" action="{{ route('doctor.logout') }}" class="inline-block btn-primary px-3 py-1 ml-4 rounded-md">
                                 @csrf
                                 <button type="submit" class="text-white font-medium hover:underline">Logout</button>
                             </form>
+                            @endauth
                         </div>
                     </div>
                 </div>

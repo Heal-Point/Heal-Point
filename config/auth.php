@@ -48,6 +48,7 @@ return [
         'driver' => 'session',
         'provider' => 'doctor',
     ],
+
     ],
 
     /*

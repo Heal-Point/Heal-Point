@@ -29,6 +29,37 @@
     .file-upload:hover {
         border-color: #e12454;
     }
+    input[type="time"]::-webkit-calendar-picker-indicator {
+        filter: invert(0.5);
+    }
+    input[type="time"]::-webkit-calendar-picker-indicator:hover {
+        filter: invert(0.3);
+    }
+    .error-message {
+        color: #e12454;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+    .days-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    .day-checkbox {
+        display: none;
+    }
+    .day-label {
+        padding: 0.5rem 1rem;
+        border-radius: 0.375rem;
+        border: 1px solid #d1d5db;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .day-checkbox:checked + .day-label {
+        background-color: #e12454;
+        color: white;
+        border-color: #e12454;
+    }
 </style>
 @endsection
 
@@ -71,7 +102,18 @@
             <div class="md:w-3/5 p-8">
                 <h1 class="text-2xl font-bold text-gray-800 mb-6">Doctor Registration</h1>
 
-                <form method="POST" action="{{ route('register.doctor.store') }}" enctype="multipart/form-data" class="space-y-4">
+                @if ($errors->any())
+                    <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+                        <h3 class="text-red-700 font-medium">Please fix the following errors:</h3>
+                        <ul class="mt-2 list-disc list-inside text-sm text-red-600">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
+                <form method="POST" action="{{ route('register.doctor.store') }}" enctype="multipart/form-data" class="space-y-4" id="doctorRegistrationForm">
                     @csrf
 
                     <div class="grid md:grid-cols-2 gap-4">
@@ -96,7 +138,7 @@
 
                         <div>
                             <x-input-label for="specialization_id" :value="__('Specialization')" />
-                            <select id="specialization_id" name="specialization_id" class="block mt-1 w-full border-gray-300 focus-accent rounded-md shadow-sm">
+                            <select id="specialization_id" name="specialization_id" class="block mt-1 w-full border-gray-300 focus-accent rounded-md shadow-sm" required>
                                 <option value="">Select your specialization</option>
                                 @foreach($specializations as $specialization)
                                     <option value="{{ $specialization->id }}" {{ old('specialization_id') == $specialization->id ? 'selected' : '' }}>
@@ -124,13 +166,14 @@
                     <div class="grid md:grid-cols-2 gap-4 mt-4">
                         <div>
                             <x-input-label for="experience_years" :value="__('Years of Experience')" />
-                            <x-text-input id="experience_years" class="block mt-1 w-full focus-accent" type="number" name="experience_years" :value="old('experience_years')" min="0" />
+                            <x-text-input id="experience_years" class="block mt-1 w-full focus-accent" type="number" name="experience_years" :value="old('experience_years')" min="0" required />
                             <x-input-error :messages="$errors->get('experience_years')" class="mt-1" />
                         </div>
 
                         <div>
                             <x-input-label for="governorate" :value="__('Governorate')" />
-                            <select id="governorate" name="governorate" class="block mt-1 w-full border-gray-300 focus-accent rounded-md shadow-sm">
+                            <select id="governorate" name="governorate" class="block mt-1 w-full border-gray-300 focus-accent rounded-md shadow-sm" required>
+                                <option value="">Select governorate</option>
                                 <option value="Amman" {{ old('governorate') == 'Amman' ? 'selected' : '' }}>Amman</option>
                                 <option value="Irbid" {{ old('governorate') == 'Irbid' ? 'selected' : '' }}>Irbid</option>
                                 <option value="Ajloun" {{ old('governorate') == 'Ajloun' ? 'selected' : '' }}>Ajloun</option>
@@ -148,21 +191,69 @@
 
                         <div class="md:col-span-2">
                             <x-input-label for="address" :value="__('Clinic Address')" />
-                            <x-text-input id="address" class="block mt-1 w-full focus-accent" type="text" name="address" :value="old('address')" />
+                            <x-text-input id="address" class="block mt-1 w-full focus-accent" type="text" name="address" :value="old('address')" required />
                             <x-input-error :messages="$errors->get('address')" class="mt-1" />
                         </div>
 
                         <div>
                             <x-input-label for="price_per_appointment" :value="__('Price per Appointment (JOD)')" />
-                            <x-text-input id="price_per_appointment" class="block mt-1 w-full focus-accent" type="number" name="price_per_appointment" :value="old('price_per_appointment')" step="0.01" min="0" />
+                            <x-text-input id="price_per_appointment" class="block mt-1 w-full focus-accent" type="number" name="price_per_appointment" :value="old('price_per_appointment')" step="0.01" min="0" required />
                             <x-input-error :messages="$errors->get('price_per_appointment')" class="mt-1" />
                         </div>
+                    </div>
+
+                    <!-- Working Hours -->
+                    <div class="grid md:grid-cols-2 gap-4 mt-4">
+                        <div>
+                            <x-input-label for="working_hours_start" :value="__('Start Time')" />
+                            <x-text-input id="working_hours_start" class="block mt-1 w-full focus-accent"
+                                        type="time" name="working_hours_start"
+                                        value="{{ old('working_hours_start', '09:00') }}" required />
+                            <x-input-error :messages="$errors->get('working_hours_start')" class="mt-1" />
+                        </div>
+
+                        <div>
+                            <x-input-label for="working_hours_end" :value="__('End Time')" />
+                            <x-text-input id="working_hours_end" class="block mt-1 w-full focus-accent"
+                                        type="time" name="working_hours_end"
+                                        value="{{ old('working_hours_end', '17:00') }}" required />
+                            <x-input-error :messages="$errors->get('working_hours_end')" class="mt-1" />
+                        </div>
+                    </div>
+
+                    <!-- Available Days -->
+                    <div class="mt-4">
+                        <x-input-label :value="__('Available Days')" />
+                        <div class="days-container mt-2">
+                            <input type="checkbox" id="monday" name="monday" value="1" class="day-checkbox" {{ old('monday') ? 'checked' : '' }}>
+                            <label for="monday" class="day-label">Monday</label>
+
+                            <input type="checkbox" id="tuesday" name="tuesday" value="1" class="day-checkbox" {{ old('tuesday') ? 'checked' : '' }}>
+                            <label for="tuesday" class="day-label">Tuesday</label>
+
+                            <input type="checkbox" id="wednesday" name="wednesday" value="1" class="day-checkbox" {{ old('wednesday') ? 'checked' : '' }}>
+                            <label for="wednesday" class="day-label">Wednesday</label>
+
+                            <input type="checkbox" id="thursday" name="thursday" value="1" class="day-checkbox" {{ old('thursday') ? 'checked' : '' }}>
+                            <label for="thursday" class="day-label">Thursday</label>
+
+                            <input type="checkbox" id="friday" name="friday" value="1" class="day-checkbox" {{ old('friday') ? 'checked' : '' }}>
+                            <label for="friday" class="day-label">Friday</label>
+
+                            <input type="checkbox" id="saturday" name="saturday" value="1" class="day-checkbox" {{ old('saturday') ? 'checked' : '' }}>
+                            <label for="saturday" class="day-label">Saturday</label>
+
+                            <input type="checkbox" id="sunday" name="sunday" value="1" class="day-checkbox" {{ old('sunday') ? 'checked' : '' }}>
+                            <label for="sunday" class="day-label">Sunday</label>
+                        </div>
+                        <div id="days-error" class="error-message" style="display: none;">Please select at least one available day</div>
+                        @error('monday')<div class="error-message">{{ $message }}</div>@enderror
                     </div>
 
                     <!-- Bio and Documents -->
                     <div class="mt-4">
                         <x-input-label for="bio" :value="__('Professional Bio')" />
-                        <textarea id="bio" name="bio" rows="3" class="block mt-1 w-full border-gray-300 focus-accent rounded-md shadow-sm">{{ old('bio') }}</textarea>
+                        <textarea id="bio" name="bio" rows="3" class="block mt-1 w-full border-gray-300 focus-accent rounded-md shadow-sm" required>{{ old('bio') }}</textarea>
                         <x-input-error :messages="$errors->get('bio')" class="mt-1" />
                     </div>
 
@@ -213,19 +304,64 @@
 
 @section('scripts')
 <script>
-    // File upload display logic
-    document.getElementById('image').addEventListener('change', function(e) {
-        const label = this.nextElementSibling;
-        if (this.files.length > 0) {
-            label.querySelector('p:first-of-type').textContent = this.files[0].name;
-        }
-    });
+    document.addEventListener('DOMContentLoaded', function() {
+        // File upload display
+        document.getElementById('image').addEventListener('change', function(e) {
+            const label = this.nextElementSibling;
+            if (this.files.length > 0) {
+                label.querySelector('p:first-of-type').textContent = this.files[0].name;
+            }
+        });
 
-    document.getElementById('doctor_document').addEventListener('change', function(e) {
-        const label = this.nextElementSibling;
-        if (this.files.length > 0) {
-            label.querySelector('p:first-of-type').textContent = this.files[0].name;
-        }
+        document.getElementById('doctor_document').addEventListener('change', function(e) {
+            const label = this.nextElementSibling;
+            if (this.files.length > 0) {
+                label.querySelector('p:first-of-type').textContent = this.files[0].name;
+            }
+        });
+
+        // Time input formatting
+        const timeInputs = document.querySelectorAll('input[type="time"]');
+        timeInputs.forEach(input => {
+            input.addEventListener('change', function() {
+                if (!this.value) return;
+                const [hours, minutes] = this.value.split(':');
+                this.value = `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
+            });
+        });
+
+        // Form validation
+        const form = document.getElementById('doctorRegistrationForm');
+        const daysError = document.getElementById('days-error');
+
+        form.addEventListener('submit', function(e) {
+            // Check at least one day is selected
+            const checkedDays = document.querySelectorAll('.day-checkbox:checked');
+            if (checkedDays.length === 0) {
+                e.preventDefault();
+                daysError.style.display = 'block';
+                return;
+            } else {
+                daysError.style.display = 'none';
+            }
+
+            // Validate working hours
+            const startTime = document.getElementById('working_hours_start').value;
+            const endTime = document.getElementById('working_hours_end').value;
+
+            if (startTime && endTime && startTime >= endTime) {
+                e.preventDefault();
+                const errorElement = document.createElement('div');
+                errorElement.className = 'error-message mt-1';
+                errorElement.textContent = 'End time must be after start time';
+
+                const endTimeInput = document.getElementById('working_hours_end');
+                if (!document.querySelector('#working_hours_end + .error-message')) {
+                    endTimeInput.insertAdjacentElement('afterend', errorElement);
+                }
+                return;
+            }
+        });
     });
 </script>
 @endsection
